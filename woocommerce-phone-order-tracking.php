@@ -33,18 +33,27 @@ function woocommerce_phone_order_tracking_shortcode( $atts ) {
         } else {
             $order = wc_get_order( apply_filters( 'woocommerce_shortcode_order_tracking_order_id', $order_id ) );
 
-            if ( $order && is_a( $order, 'WC_Order' ) && strtolower( $order->get_billing_phone() ) === strtolower( $phone_number ) ) {
-                do_action( 'woocommerce_track_order', $order->get_id() );
-                wc_get_template(
-                    'order/tracking.php',
-                    array(
-                        'order' => $order,
-                    )
-                );
-                return;
-            } else {
-                wc_print_notice( __( 'Sorry, the order could not be found. Please contact us if you are having difficulty finding your order details.', 'woocommerce' ), 'error' );
-            }
+            if ( $order && is_a( $order, 'WC_Order' ) ) {
+				// Normalize and extract the last 10 digits
+				$normalized_input_phone = substr( preg_replace( '/\D/', '', $phone_number ), -10 );
+				$normalized_billing_phone = substr( preg_replace( '/\D/', '', $order->get_billing_phone() ), -10 );
+
+				// Compare the last 10 digits
+				if ( $normalized_input_phone === $normalized_billing_phone ) {
+					do_action( 'woocommerce_track_order', $order->get_id() );
+					wc_get_template(
+						'order/tracking.php',
+						array(
+							'order' => $order,
+						)
+					);
+					return;
+				} else {
+					wc_print_notice( __( 'Sorry, the order could not be found. Please ensure the order ID and phone number are correct.', 'woocommerce' ), 'error' );
+				}
+			}else{
+				wc_print_notice( __( 'Sorry, the order could not be found. Please ensure the order ID is correct.', 'woocommerce' ), 'error' );
+			}
         }
     }
 
